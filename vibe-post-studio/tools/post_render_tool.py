@@ -26,10 +26,12 @@ class PostRenderTool(Tool):
                 name="post_render",
                 description=(
                     "按 spec 渲染拼图帖图片（配合 vibe-post 技能使用，先读技能中的 spec 说明）。"
-                    "Draws a post from the user's own photos: layout template, frames, text, camera stats, "
-                    "date stamp and decorations. Photos are only cropped/resized, never repainted or AI-edited; "
-                    "originals are untouched. Writes <name>.jpg (or <name>-01.jpg… for carousels) plus "
-                    "<name>.spec.json into output_dir and returns file paths and layout warnings."
+                    "Draws a post from the user's own photos: layout template, frames, backgrounds, text, "
+                    "photo notes, camera stats, date stamp and decorations. One call renders a single post, a "
+                    "panorama carousel, or a themed series of pages (spec.theme + spec.pages). Photos are only "
+                    "cropped/resized, never repainted or AI-edited; originals are untouched. Writes "
+                    "<name>.jpg (or <name>-01.jpg… plus <name>-overview.jpg) and <name>.spec.json into "
+                    "output_dir; returns file paths and layout warnings (overlaps, tiny text) to fix."
                 ),
                 input_params={
                     "type": "object",

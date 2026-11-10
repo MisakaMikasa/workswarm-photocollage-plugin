@@ -126,6 +126,79 @@ SAMPLES = {
     },
 }
 
+SAMPLES["07-series"] = {
+    "format": "4:5",
+    "theme": {
+        "background": {"color": "#efe6d8", "texture": "paper"},
+        "frame": {"style": "matte", "shadow": True},
+        "fonts": {"title": "serif", "body": "sans", "note": "typewriter"},
+        "colors": {"text": "#2b2622", "accent": "#b5562f"},
+        "note_style": "label",
+    },
+    "pages": [
+        {   # autumn roads: dot-grid paper, colour block, hero-side
+            "background": {"pattern": {"type": "dots", "color": "#7a5c3a33", "spacing": 0.035}},
+            "photos": [{"path": P[0], "note": {"text": "Oct 21 · Michigan", "position": "bottom-left"}},
+                       {"path": P[7], "note": {"text": "the long way", "position": "bottom-left",
+                                               "style": "handwritten"}},
+                       P[1]],
+            "layout": {"template": "hero-side", "hero": 0.6, "top_space": 0.13, "bottom_space": 0.1},
+            "decorations": [{"type": "block", "box": [0.55, 0.1, 0.4, 0.5], "color": "#d9b48f", "rotate": 3,
+                             "layer": "under"}],
+            "texts": [{"text": "Autumn Roads", "box": [0.06, 0.035, 0.7, 0.08], "font": "title", "weight": 700,
+                       "size": 0.07, "color": "text"}],
+        },
+        {   # mountain water: cool gradient, two photos stacked, minimal notes on photos
+            "background": {"gradient": {"type": "linear", "colors": ["#dfe8ee", "#b9cbd8"], "angle": 100}},
+            "photos": [{"path": P[2], "note": {"text": "still water", "position": "top-left", "style": "minimal"}},
+                       {"path": P[8], "note": {"text": "high country", "position": "top-right", "style": "minimal"}}],
+            "layout": {"template": "grid", "cols": 2, "gap": 0.03, "top_space": 0.12, "bottom_space": 0.12},
+            "texts": [{"text": "HIGH COUNTRY", "box": [0.06, 0.04, 0.88, 0.06], "font": "body", "weight": 800,
+                       "size": 0.045, "tracking": 0.2, "color": "#24384a"},
+                      {"text": "Somewhere between the peaks and the quiet.", "box": [0.06, 0.9, 0.88, 0.06],
+                       "font": "serif_italic", "size": 0.034, "color": "#24384a"}],
+        },
+        {   # cabin: kraft paper + torn scrap + polaroid + handwritten
+            "background": {"color": "#b8936a", "texture": "kraft"},
+            "photos": [{"path": P[6], "caption": "cabin days", "frame": {"style": "polaroid", "tilt": -4}}],
+            "layout": {"template": "free", "slots": [{"x": 0.14, "y": 0.1, "w": 0.6, "h": 0.62}]},
+            "decorations": [
+                {"type": "scrap", "box": [0.42, 0.68, 0.5, 0.22], "rotate": 3, "ruled": True},
+                {"type": "label", "box": [0.62, 0.06, 0.32, 0.07], "text": "DAY 04", "shape": "tag",
+                 "uppercase": True, "tracking": 0.1},
+            ],
+            "texts": [{"text": "A cabin, a warm drink,\nnowhere else to be.", "box": [0.47, 0.72, 0.42, 0.15],
+                       "font": "hand", "size": 0.042, "rotate": 3, "on_photo": True}],
+        },
+        {   # coast: notebook lines with a margin, single photo + stamp note
+            "background": {"color": "#f7f4ec", "pattern": {"type": "lines", "color": "#7fa3c455", "spacing": 0.045,
+                                                            "margin_color": "#d0606055"}},
+            "photos": [{"path": P[4], "note": {"text": "10.29", "position": "bottom-right", "style": "stamp"}}],
+            "layout": {"template": "single", "margin": 0.14, "bottom_space": 0.14},
+            "decorations": [{"type": "postmark", "at": [0.84, 0.86], "lines": ["SEA", "OCT 29"], "size": 0.085}],
+            "texts": [{"text": "The edge of the map", "box": [0.14, 0.8, 0.55, 0.06], "font": "title", "size": 0.05}],
+        },
+        {   # last light: stripes, filmstrip of 2
+            "background": {"color": "#f3ede2", "pattern": {"type": "stripes", "color": "#e7c9a633", "spacing": 0.06,
+                                                            "angle": 30}},
+            "photos": [P[9], P[3]],
+            "layout": {"template": "filmstrip", "frames": 2, "strip_width": 0.62, "tilt": 2, "offset_x": 0.12},
+            "texts": [{"text": "last\nlight", "box": [0.05, 0.08, 0.24, 0.2], "font": "title", "size": 0.07,
+                       "weight": 700, "color": "accent"}],
+        },
+    ],
+}
+
+BAD = {  # deliberately broken: overlapping title on a photo, tiny text, small postmark
+    "format": "4:5",
+    "photos": [P[0], P[1]],
+    "layout": {"template": "grid", "cols": 1},
+    "decorations": [{"type": "postmark", "at": [0.5, 0.5], "size": 0.05, "lines": ["X"]}],
+    "texts": [{"text": "TITLE ON PHOTO", "box": [0.1, 0.2, 0.8, 0.1], "size": 0.06},
+              {"text": "tiny footnote", "box": [0.1, 0.45, 0.5, 0.1], "size": 0.015},
+              {"text": "also here", "box": [0.15, 0.22, 0.6, 0.1], "size": 0.05}],
+}
+
 t0 = time.time()
 ins = eng.inspect_photos(P + [FAKE], contact_sheet_dir=str(out_dir))
 print("inspect:", len(ins["photos"]), "photos, errors:", ins["errors"])
@@ -134,4 +207,11 @@ for name, spec in SAMPLES.items():
     t = time.time()
     res = eng.render_post(spec, str(out_dir), name)
     print(f"{name}: {time.time() - t:.2f}s files={[Path(f['path']).name for f in res['files']]} warnings={res['warnings']}")
+bad = eng.render_post(BAD, str(out_dir), "99-bad")
+print("99-bad warnings:")
+for w in bad["warnings"]:
+    print("  -", w)
+want = ["overlaps photo", "too small", "postmark is smaller", "overlaps text"]
+missing = [k for k in want if not any(k in w for w in bad["warnings"])]
+print("expected warnings present" if not missing else f"MISSING warnings: {missing}")
 print(f"total {time.time() - t0:.1f}s")

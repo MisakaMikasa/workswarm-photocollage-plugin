@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "package_type": "plugin",
   "id": "vibe-post-studio",
   "name": "氛围拼图帖",
@@ -20,9 +20,18 @@
     "en": "Turn the photos in this folder into a film-style Instagram collage post"
   },
   "tags": [
-    { "en": "Photo collage", "zh": "照片拼图" },
-    { "en": "Instagram / Xiaohongshu", "zh": "Instagram / 小红书" },
-    { "en": "Layout & typography", "zh": "排版设计" }
+    {
+      "en": "Photo collage",
+      "zh": "照片拼图"
+    },
+    {
+      "en": "Instagram / Xiaohongshu",
+      "zh": "Instagram / 小红书"
+    },
+    {
+      "en": "Layout & typography",
+      "zh": "排版设计"
+    }
   ],
   "quick_inputs": [
     {
@@ -30,8 +39,8 @@
       "en": "Turn the photos in this folder into a film-style Instagram collage post"
     },
     {
-      "zh": "把这次旅行的照片按地点分组，每组做一张手账风拼图",
-      "en": "Group my trip photos by place and make a travel-journal collage for each group"
+      "zh": "把这次旅行的照片按地点分组，做成一组多页拼图，每页一个地点",
+      "en": "Group my trip photos by place and make a series of collage pages, one page per place"
     },
     {
       "zh": "用这些照片做一个 3 页的轮播图，加上相机参数",
@@ -39,13 +48,19 @@
     }
   ],
   "skills": [
-    { "dir": "./skills/vibe-post", "mode": "all" }
+    {
+      "dir": "./skills/vibe-post",
+      "mode": "all"
+    }
   ],
   "tools": [
     {
       "file": "tools/photo_inspect_tool.py",
       "class": "PhotoInspectTool",
-      "display_name": { "en": "photo_inspect", "zh": "照片检查" },
+      "display_name": {
+        "en": "photo_inspect",
+        "zh": "照片检查"
+      },
       "display_description": {
         "en": "Reads size, orientation, EXIF camera stats, palette and focus point, suggests groups by time, place and folder, and makes a numbered contact sheet.",
         "zh": "读取照片尺寸、方向、EXIF 相机参数、主色和焦点，按时间、地点、文件夹建议分组，并生成编号缩略图总览。"
@@ -54,7 +69,10 @@
     {
       "file": "tools/post_render_tool.py",
       "class": "PostRenderTool",
-      "display_name": { "en": "post_render", "zh": "帖子渲染" },
+      "display_name": {
+        "en": "post_render",
+        "zh": "帖子渲染"
+      },
       "display_description": {
         "en": "Renders the post from a layout spec: collage, frames, text, camera stats, date stamp and decorations. Only crops and resizes your photos.",
         "zh": "按排版方案渲染帖子：拼图、边框、文字、相机参数、日期戳和装饰；只裁剪缩放原图，不做 AI 改图。"
