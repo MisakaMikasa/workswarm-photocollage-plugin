@@ -1,0 +1,11 @@
+Background textures in this folder are from ambientCG (https://ambientcg.com),
+released under the Creative Commons CC0 1.0 Universal licence (public domain).
+Only the colour maps were kept, resized to half resolution.
+
+wood.jpg  <- Wood049  https://ambientcg.com/view?id=Wood049
+wood_light.jpg  <- Wood096  https://ambientcg.com/view?id=Wood096
+parquet.jpg  <- WoodFloor051  https://ambientcg.com/view?id=WoodFloor051
+cork.jpg  <- Cork002  https://ambientcg.com/view?id=Cork002
+marble.jpg  <- Marble012  https://ambientcg.com/view?id=Marble012
+concrete.jpg  <- Concrete034  https://ambientcg.com/view?id=Concrete034
+paper_soft.jpg  <- Paper003  https://ambientcg.com/view?id=Paper003

@@ -1,6 +1,6 @@
 ---
 name: vibe-post
-description: "氛围拼图帖：把用户自己的照片按指定氛围排版成 Instagram / 小红书帖子、拼图、多页图组或轮播图（背景、边框、文字、照片注释、相机参数、日期戳、贴纸等）。必读规则：调用 post_render 前先用 skill_tool 读取本技能全文；⓪用户没说明形式/风格时，渲染前分两轮用 ask_user 提问（每轮最多 4 题、每题最多 4 个选项，推荐项放第一个并标“推荐”）：第一轮问结构——形式（多页图组 / 多页+封面 / 单张拼图 / 全景轮播）、摆放（随意叠放 / 随意不重叠 / 整齐网格 / 杂志主次）、文字（不要文字 / 只要标题 / 标题+短注释 / 我来提供）、画幅；第二轮问外观——字体（有文字才问）、背景、色调、装饰多少；用户已说明或话中已隐含的（如“杂志风、干净整齐”→不重叠、杂志主次）不再问，并用一句话说明默认选择；整轮都已确定就跳过；每次 ask_user（包括确认分组等是/否问题）都必须用 questions 并给 2–4 个可点选项，不要只传 query，否则空提交会反复重问；缺输出目录时一并询问；预览图必须用发送文件工具直接发到对话里，不要只给本地链接；①先用 photo_inspect 检查照片再分组——用户指定优先，其次按内容、地点、时间，每组用一句话说明理由；做多张时先确认分组；②只用用户原图，只裁剪缩放，禁止 AI 生成/重绘，禁止调色滤镜；③不得编造 EXIF；日期地点未知时先问，用户同意虚构才可虚构并注明；④只写入用户指定目录；⑤先出预览，按反馈小步修改，渲染警告（重叠、字太小）先修再给用户看。Vibe Post rules: read this skill via skill_tool before calling post_render."
+description: "氛围拼图帖：把用户自己的照片按指定氛围排版成 Instagram / 小红书帖子、拼图、多页图组或轮播图（背景、边框、文字、照片注释、相机参数、日期戳、贴纸等）。必读规则：调用 post_render 前先用 skill_tool 读取本技能全文；⓪用户没说明形式/风格时，渲染前分两轮用 ask_user 提问（每轮最多 4 题、每题最多 4 个选项，推荐项放第一个并标“推荐”）：第一轮问结构——形式（多页图组 / 多页+封面 / 单张拼图 / 全景轮播）、摆放（随意叠放 / 随意不重叠 / 整齐网格 / 杂志主次）、文字（不要文字 / 只要标题 / 标题+短注释 / 我来提供）、画幅；第二轮问外观——字体（有文字才问）、背景、色调、装饰多少；用户已说明或话中已隐含的（如“杂志风、干净整齐”→不重叠、杂志主次）不再问，并用一句话说明默认选择；整轮都已确定就跳过；每次 ask_user（包括确认分组等是/否问题）都必须用 questions 并给 2–4 个可点选项，不要只传 query，否则空提交会反复重问；用户看不到 query，分组列表、方案等必须写在 question 文本里；缺输出目录时一并询问；预览图必须用发送文件工具直接发到对话里，不要只给本地链接；①先用 photo_inspect 检查照片再分组——用户指定优先，其次按内容、地点、时间，每组用一句话说明理由；做多张时先确认分组；②只用用户原图，只裁剪缩放，禁止 AI 生成/重绘照片，禁止调色滤镜；背景优先用内置颜色/图案/纹理/surface（木纹、软木、大理石等）或用户自己的照片，只有用户要求复杂精细的背景场景时，才用 ask_user 让用户选择是否用 AI 生成背景（会消耗额度；用内置 generate_visual 工具，找不到就说明未配置并改用最接近的 surface，不要转用其他生图技能或脚本），并说明背景是 AI 生成；③不得编造 EXIF；日期地点未知时先问，用户同意虚构才可虚构并注明；④只写入用户指定目录；⑤先出预览，按反馈小步修改，渲染警告（重叠、字太小）先修再给用户看。Vibe Post rules: read this skill via skill_tool before calling post_render."
 ---
 
 # Vibe Post Studio
@@ -16,6 +16,12 @@ Reply in the user's language.
 
 1. **The user's photos only.** Never generate, repaint, retouch, upscale-with-AI
    or colour-grade photos. `post_render` only crops and resizes them.
+   **Backgrounds** come from, in this order: the built-in colours, gradients,
+   patterns and textures; a bundled `surface` (wood, cork, marble…); the
+   user's own photo of a surface (`image`). An **AI-generated background is
+   a last resort**, used only when the user asks for a complex or very
+   intricate background that none of these can give (e.g. "a vintage desk
+   scattered with old letters and dried flowers"). See section 5a.
 2. **Never invent facts.** Camera stats come only from EXIF placeholders
    (section 8). Dates and places come from EXIF/GPS or the user. If they are
    unknown, ask once; invent them only if the user agrees, and say clearly
@@ -38,9 +44,17 @@ Reply in the user's language.
    **Every `ask_user` call must use `questions` with 2–4 options, including
    yes/no confirmations.** A plain `query` with no options gives the user
    nothing to click; an empty submit makes WorkSwarm re-ask the same question
-   until they type. Put long details (the grouping list, the plan) in
-   `query` and keep the question itself short, e.g. "按此分组继续？" with
-   options "继续（推荐）" · "调整分组" · "合并成更少页".
+   until they type.
+   **The user never sees `query` when `questions` are given**: only each
+   question's text and its option labels/descriptions are shown. So anything
+   the user must read to answer (the grouping list, the plan, implied
+   choices, the missing output folder) goes **inside the `question` text**,
+   e.g. "分组如下：
+① 秋色山路 #0 #1 #7（同为秋林道路）
+② 山湖 #2 #8 #9（湖泊与山峰）
+…
+按此分组继续？"
+   with options "继续（推荐）" · "调整分组" · "合并成更少页".
 
    **Short-circuit: don't ask what is already decided.** Before each round,
    drop every question that is
@@ -51,7 +65,7 @@ Reply in the user's language.
      texture; "minimal" → tidy, no decorations, sans; "film" → film strip,
      typewriter; or
    - irrelevant after earlier answers (no font question after "no text").
-   Name the implied choices in one line in the lead text so the user can
+   Name the implied choices in one line at the start of the first question's text so the user can
    correct them ("I'll keep it clean: editorial layout, no overlap, serif").
    If nothing is left to ask in a round, skip that round.
 
@@ -69,11 +83,11 @@ Reply in the user's language.
    | Question | Options (max 4) |
    |---|---|
    | Font style (only if there is text) | handwritten casual · cursive script · elegant serif · clean sans (typewriter / marker if the user types them) |
-   | Background | paper texture · pattern (grid / dots / checks / stripes) · soft gradient · plain colour |
+   | Background | paper texture · surface (wood / cork / marble / concrete) · pattern (grid / dots / checks / stripes) · plain or soft gradient |
    | Colour mood | warm · cool · pastel · neutral / dark |
    | Decorations | a few (tape, stamp) · none · lots (stickers, labels, scraps) |
 
-   If the output folder is missing, ask for it in round 1's lead text.
+   If the output folder is missing, ask for it as a question in round 1 (options: a `posts/` subfolder next to the photos (推荐) · the photo folder itself; the user can type another path).
    Separate posts per group, a closing page, or other choices come in as
    typed answers. If the user says "just do it" / "surprise me" / "go
    ahead" instead of answering, use the recommended options and say which
@@ -81,9 +95,13 @@ Reply in the user's language.
 2. **Inspect**: call `photo_inspect` once with the photo paths or simply the
    folder (it expands to the images inside) and `contact_sheet_dir` = the
    output folder. Use the returned `path`s in the spec.
-3. **Group** (section 2). Show one line per group with the reason. To
-   confirm, use `ask_user` with options (continue / adjust), never a bare
-   free-text question.
+3. **Group** (section 2). With no EXIF dates/GPS, **look at the contact
+   sheet** and group by what the photos show (scenery type, colours,
+   subject); "all in one group" is only right when the photos really are
+   one subject. Confirm with `ask_user` whose **question text lists every
+   group** (photo numbers + one-line reason) and ends "按此分组继续？", with
+   options (continue / adjust / fewer pages), never a bare free-text
+   question.
 4. **Plan**: per post/page, 1–2 lines: layout, photos, background, text.
 5. **Render a preview** (`name` like `kyoto-preview-1`). For a series use one
    `post_render` call with `theme` + `pages`.
@@ -198,6 +216,35 @@ Start from the closest recipe; for an unlisted vibe blend two and say which.
 | Zine / 拼贴 | `#f4f1ea` + `grain`; checks or stripes | `free` rotate ±4–8, `matte` + shadow | `sans` 800 + `hand` · `label` | `block`s, `marker`, stickers |
 | Minimal Japanese / 日系 | `#fafaf8`, plain | `single` / `hero-side`, margin 0.12 | `serif` 300–400 · `minimal` | thin `line` |
 | Summer / 夏日 | linear gradient `#ffe8c7`→`#ffd1dc` | `grid` + `rounded` | `sans` 800 + `hand` · `handwritten` | `sparkle` stickers, `block`s |
+| Vintage table / 复古木桌 | `surface: wood`, tint `#b07840` 0.2, vignette 0.5 | `free` / `scatter` polaroids + shadow | `hand` or `typewriter` · `handwritten` | tape, `postmark`, `scrap` |
+| Pinboard / 软木板 | `surface: cork`, scale 0.6 | `scatter` + `polaroid`, light tilt | `marker` · `label` | tape, `label` tags |
+| Marble / 大理石 | `surface: marble` (or `paper_soft`) | `grid` / `magazine` + `keyline` | `serif` · `minimal` | thin `line` |
+| Concrete / 工业风 | `surface: concrete` + `grain` | `grid`, gap 0.015 | `sans` 800 caps · `label` | `block`s |
+
+### 5a. Complex backgrounds (AI fallback)
+
+Only when the user asks for a background with real scene detail that no
+colour, pattern, texture or `surface` can give:
+1. Offer it with `ask_user` options: "use the closest built-in surface
+   (推荐)" · "I'll send a photo of my own surface" · "generate it with AI
+   (uses image credits)". Never generate without that explicit choice.
+2. If AI is chosen, call the built-in `generate_visual` tool (find it with
+   one `tool_search`; `generate_image` also works if that is the one found)
+   with `save_dir` = the output folder, `aspect_ratio` = the canvas ratio
+   (e.g. "4:5", "3:4"), `resolution` "1024", and a prompt that describes
+   **only an empty surface/scene that fills the whole frame edge to edge,
+   seen from directly above, details kept near the edges so the middle stays
+   clear for the photos, with no people, no
+   photos, no text and no logos**.
+   If neither tool exists, image generation is not configured: tell the user
+   to add an image model under WorkSwarm settings → Visual processing, and
+   use the closest `surface` meanwhile. **Do not** fall back to other image
+   skills or scripts (they need their own keys and setup). If the tool
+   returns an error, show the error in one line and use the closest
+   `surface`.
+3. Pass the returned path as `background.image` (add `blur`/`dim` so the
+   photos stay the focus). Tell the user the background is AI-generated; the
+   photos themselves are still untouched.
 | Notebook / 笔记本 | `#f7f4ec` + `lines` pattern with margin line | `single` / `hero` + `matte` | `hand` · `handwritten` | `postmark` |
 | Camera nerd / 参数党 | `#f5f5f5` or `#111`; grid pattern | `grid` / `single` + `keyline` | `mono` · `minimal` | `{settings:N}` lines |
 
@@ -280,6 +327,17 @@ Page `background` / `frame` merge over the theme's. In texts and decorations
              // grid | dots (dot_size) | lines (top, margin_color) | checks | stripes (angle, ratio)
  "texture": "paper"}  // none | paper | grain | kraft (+ texture_strength)
 ```
+Instead of `color` as the base, use one of:
+- `"surface": "wood"`: a bundled, tiled texture: `wood` (weathered brown),
+  `wood_light` (knotty pine), `parquet`, `cork`, `marble`, `concrete`,
+  `paper_soft` (soft mottled white). `surface_scale` (tile width / page
+  width, default 0.9), `surface_rotate`: 90 to turn the grain.
+- `"image": "<absolute path>"`: the user's own surface photo or an
+  AI-generated background (section 5a), cover-cropped to the canvas.
+
+Both take `blur` (% of page width, e.g. 2), `dim` (0–0.9), `tint`
+(`{"color": "#b07840", "strength": 0.2}`) and `vignette` (0–1). Gradient,
+pattern and texture layers still draw on top.
 A plain string means a flat colour. Use `#rrggbbaa` for see-through pattern
 colours.
 

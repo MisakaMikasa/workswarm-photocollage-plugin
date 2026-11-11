@@ -1,9 +1,9 @@
 {
-  "version": "1.0.5",
+  "version": "1.0.6",
   "package_type": "plugin",
   "id": "vibe-post-studio",
   "name": "氛围拼图帖",
-  "description": "Turn your own photos into Instagram / Xiaohongshu collage posts and carousels in a vibe you describe, with grouping, frames, text and camera stats. No AI image generation.",
+  "description": "Turn your own photos into Instagram / Xiaohongshu collage posts and carousels in a vibe you describe, with grouping, frames, text and camera stats. Your photos are never AI-edited.",
   "display_name": {
     "en": "Vibe Post Studio",
     "zh": "氛围拼图帖"

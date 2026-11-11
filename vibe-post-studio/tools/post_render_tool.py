@@ -1,4 +1,4 @@
-"""post_render: draw a collage post from a JSON spec with Pillow (no AI image generation)."""
+"""post_render: draw a collage post from a JSON spec with Pillow (photos are never AI-edited)."""
 
 from __future__ import annotations
 

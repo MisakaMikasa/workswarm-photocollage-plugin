@@ -3,8 +3,10 @@
 **Vibe Post Studio / 氛围拼图帖** — a WorkSwarm plugin that lays out your own
 photos as Instagram / Xiaohongshu collage posts and carousels in a vibe you
 describe: grouping by content, place and time, frames, text, notes, camera
-stats and date stamps. Photos are only cropped and resized — no AI image
-generation, no colour grading.
+stats and date stamps. Photos are only cropped and resized — never AI-edited,
+no colour grading. Backgrounds use built-in colours, patterns and CC0 surface
+textures (wood, cork, marble…) or the user's own photo; an AI-generated
+background is only offered when the user asks for a complex scene.
 
 ## Layout
 
@@ -17,7 +19,8 @@ vibe-post-studio/            the plugin package (install this folder)
 │   ├── photo_inspect_tool.py
 │   ├── post_render_tool.py
 │   └── vibepost_engine.py   shared Pillow engine
-└── assets/fonts/            OFL / Apache-2.0 fonts with licences
+├── assets/fonts/            OFL / Apache-2.0 fonts with licences
+└── assets/textures/         CC0 surface textures (ambientCG) + licence note
 dev/                         development scripts (not part of the package)
 ├── run_samples.py           render sample posts straight through the engine
 └── test_grouping.py         grouping check with synthetic EXIF

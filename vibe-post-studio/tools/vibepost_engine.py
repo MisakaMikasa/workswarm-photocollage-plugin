@@ -1510,11 +1510,56 @@ def _pattern(W: int, H: int, cfg: dict[str, Any], slide_w: int) -> Image.Image:
     return layer
 
 
+TEXTURE_DIR = ASSETS / "textures"
+SURFACES = ("wood", "wood_light", "parquet", "cork", "marble", "concrete", "paper_soft")
+
+
+def _surface_layer(W: int, H: int, cfg: dict[str, Any], slide_w: int) -> Image.Image | None:
+    """Tiled bundled texture (`surface`) or a cover-cropped background image (`image`)."""
+    if cfg.get("image"):
+        path = Path(str(cfg["image"]))
+        if not path.is_file():
+            raise FileNotFoundError(f"background image not found: {path}")
+        img = load_photo(str(path)).convert("RGB")
+        layer, _ = crop_to(img, W, H, (0.5, 0.5))
+    elif cfg.get("surface"):
+        name = str(cfg["surface"])
+        if name not in SURFACES:
+            raise ValueError(f"unknown surface '{name}'; choose one of {', '.join(SURFACES)}")
+        tex = Image.open(TEXTURE_DIR / f"{name}.jpg").convert("RGB")
+        tw = max(64, int(slide_w * float(cfg.get("surface_scale", 0.9))))
+        tex = tex.resize((tw, max(32, int(tex.height * tw / tex.width))), Image.Resampling.LANCZOS)
+        if cfg.get("surface_rotate") in (90, "90"):
+            tex = tex.transpose(Image.Transpose.ROTATE_90)
+        layer = Image.new("RGB", (W, H))
+        for y in range(0, H, tex.height):
+            for x in range(0, W, tex.width):
+                layer.paste(tex, (x, y))
+    else:
+        return None
+    if float(cfg.get("blur", 0) or 0) > 0:
+        layer = layer.filter(ImageFilter.GaussianBlur(float(cfg["blur"]) * slide_w / 100))
+    arr = np.asarray(layer, dtype=np.float32)
+    if cfg.get("tint"):
+        t = cfg["tint"] if isinstance(cfg["tint"], dict) else {"color": cfg["tint"]}
+        c = np.array(parse_color(t.get("color", "#c8a070"))[:3], dtype=np.float32)
+        s = float(t.get("strength", 0.25))
+        arr = arr * (1 - s) + c * s
+    if float(cfg.get("dim", 0) or 0) > 0:
+        arr *= 1 - min(0.9, float(cfg["dim"]))
+    if float(cfg.get("vignette", 0) or 0) > 0:
+        yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
+        cx = (xx % slide_w) / slide_w - 0.5
+        d = np.sqrt((cx * 2) ** 2 + ((yy / H - 0.5) * 2) ** 2) / np.sqrt(2)
+        arr *= (1 - float(cfg["vignette"]) * np.clip(d, 0, 1) ** 2)[..., None]
+    return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8), "RGB").convert("RGBA")
+
+
 def make_background(W: int, H: int, bg: Any, seed: int = 3, slide_w: int | None = None) -> Image.Image:
-    """Layered background: flat colour → gradient → pattern → texture (paper / grain / kraft)."""
+    """Layered background: colour or surface/image → gradient → pattern → texture (paper / grain / kraft)."""
     cfg = bg if isinstance(bg, dict) else {"color": bg or "#ffffff"}
     slide_w = slide_w or W
-    canvas = Image.new("RGBA", (W, H), parse_color(cfg.get("color", "#ffffff")))
+    canvas = _surface_layer(W, H, cfg, slide_w) or Image.new("RGBA", (W, H), parse_color(cfg.get("color", "#ffffff")))
     if cfg.get("gradient"):
         canvas.alpha_composite(_gradient(W, H, cfg["gradient"]))
     if cfg.get("pattern"):
