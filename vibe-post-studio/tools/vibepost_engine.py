@@ -496,11 +496,30 @@ def suggest_groups(photos: list[dict[str, Any]], gap_hours: float = 3.0, gap_km:
     return {"basis": basis or ["none"], "groups": out, "near_duplicates": similar, "note": note}
 
 
+IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".tif", ".tiff", ".bmp"}
+
+
+def expand_paths(paths: list[str]) -> list[str]:
+    """Replace any folder in paths with the image files directly inside it (sorted by name)."""
+    out: list[str] = []
+    for p in paths:
+        path = Path(p).expanduser()
+        if path.is_dir():
+            out += [str(f) for f in sorted(path.iterdir(), key=lambda f: f.name.lower())
+                    if f.is_file() and f.suffix.lower() in IMAGE_SUFFIXES and not f.name.startswith("contact_sheet")]
+        else:
+            out.append(p)
+    return out
+
+
 def inspect_photos(paths: list[str], contact_sheet_dir: str | None = None) -> dict[str, Any]:
     """Facts about each photo, suggested groups and an optional numbered contact sheet."""
     photos: list[dict[str, Any]] = []
     errors: list[str] = []
     thumbs: list[Image.Image] = []
+    paths = expand_paths(paths)
+    if not paths:
+        return {"success": False, "photos": [], "errors": ["no image files found in the given paths"]}
     for i, p in enumerate(paths):
         path = Path(p).expanduser()
         if not path.is_file():

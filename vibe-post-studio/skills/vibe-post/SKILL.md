@@ -1,6 +1,6 @@
 ---
 name: vibe-post
-description: "氛围拼图帖：把用户自己的照片按指定氛围排版成 Instagram / 小红书帖子、拼图、多页图组或轮播图（背景、边框、文字、照片注释、相机参数、日期戳、贴纸等）。必读规则：调用 post_render 前先用 skill_tool 读取本技能全文；⓪用户没说明形式/风格时，先用一次提问（ask_user，多个选择题）问清：形式（单张拼图 / 多页图组 / 全景轮播 / 按组分开发帖，是否要封面/结尾页）、照片摆放（整齐网格 / 杂志主次 / 随意散落倾斜 / 胶片条）、是否重叠（不重叠 / 少量 / 大量堆叠）、文字内容（不要文字 / 只要标题 / 标题+每张注释 / 用户自己提供）、字体风格（手写 / 花体草书 / 马克笔 / 打字机 / 简洁无衬线 / 优雅衬线）、背景与氛围、画幅、输出目录；每题给推荐项和“你来定”，再开始渲染；预览图必须用发送文件工具直接发到对话里，不要只给本地链接；①先用 photo_inspect 检查照片再分组——用户指定优先，其次按内容、地点、时间，每组用一句话说明理由；做多张时先确认分组；②只用用户原图，只裁剪缩放，禁止 AI 生成/重绘，禁止调色滤镜；③不得编造 EXIF；日期地点未知时先问，用户同意虚构才可虚构并注明；④只写入用户指定目录；⑤先出预览，按反馈小步修改，渲染警告（重叠、字太小）先修再给用户看。Vibe Post rules: read this skill via skill_tool before calling post_render."
+description: "氛围拼图帖：把用户自己的照片按指定氛围排版成 Instagram / 小红书帖子、拼图、多页图组或轮播图（背景、边框、文字、照片注释、相机参数、日期戳、贴纸等）。必读规则：调用 post_render 前先用 skill_tool 读取本技能全文；⓪用户没说明形式/风格时，渲染前分两轮用 ask_user 提问（每轮最多 4 题、每题最多 4 个选项，推荐项放第一个并标“推荐”）：第一轮问结构——形式（多页图组 / 多页+封面 / 单张拼图 / 全景轮播）、摆放（随意叠放 / 随意不重叠 / 整齐网格 / 杂志主次）、文字（不要文字 / 只要标题 / 标题+短注释 / 我来提供）、画幅；第二轮问外观——字体（有文字才问）、背景、色调、装饰多少；用户已说明或话中已隐含的（如“杂志风、干净整齐”→不重叠、杂志主次）不再问，并用一句话说明默认选择；整轮都已确定就跳过；每次 ask_user（包括确认分组等是/否问题）都必须用 questions 并给 2–4 个可点选项，不要只传 query，否则空提交会反复重问；缺输出目录时一并询问；预览图必须用发送文件工具直接发到对话里，不要只给本地链接；①先用 photo_inspect 检查照片再分组——用户指定优先，其次按内容、地点、时间，每组用一句话说明理由；做多张时先确认分组；②只用用户原图，只裁剪缩放，禁止 AI 生成/重绘，禁止调色滤镜；③不得编造 EXIF；日期地点未知时先问，用户同意虚构才可虚构并注明；④只写入用户指定目录；⑤先出预览，按反馈小步修改，渲染警告（重叠、字太小）先修再给用户看。Vibe Post rules: read this skill via skill_tool before calling post_render."
 ---
 
 # Vibe Post Studio
@@ -28,30 +28,62 @@ Reply in the user's language.
 
 ## 1. Workflow
 
-1. **Ask about style first when there is no direction.** Before rendering
-   anything, ask **one round** of multiple-choice questions (use the
-   `ask_user` tool if available; otherwise one message). Skip what the user
-   already told you, never ask twice, and give every question a
-   **recommended** option plus "you decide":
+1. **Ask about style first when there is no direction: two rounds.**
+   `ask_user` allows **at most 4 questions per call and 2–4 options per
+   question**, so ask in two calls, the second after the first is answered.
+   Put the **recommended option first** and mark it "(推荐 / recommended)";
+   don't spend an option slot on "you decide" (the user can always type their
+   own answer). Never ask the same thing twice.
 
-   | # | Question | Options |
-   |---|---|---|
-   | 1 | **Format** | one collage post · series of pages (own layout each, shared theme) · swipeable panorama carousel · separate posts per group — recommend from photo count ("10 photos → series, ~4 pages") |
-   | 2 | **Cover / closing page?** (series or carousel only) | none · cover with a big title · cover + closing |
-   | 3 | **Photo arrangement** | tidy grid · editorial (one big + small ones) · loose & tilted (scattered) · film strip |
-   | 4 | **Overlap** | none · a little · lots (layered scrapbook pile) |
-   | 5 | **Text** | no text · title only · title + a short note per photo/page · I'll give you the text |
-   | 6 | **Font style** | handwritten casual · cursive script · marker · typewriter · clean sans · elegant serif |
-   | 7 | **Background & mood** | plain light · paper / kraft texture · pattern (grid, dots, checks, lines) · soft gradient · dark — plus a colour mood (warm / cool / pastel / neutral) |
-   | 8 | **Platform** | Instagram 4:5 · square · story 9:16 · 小红书 3:4 |
+   **Every `ask_user` call must use `questions` with 2–4 options, including
+   yes/no confirmations.** A plain `query` with no options gives the user
+   nothing to click; an empty submit makes WorkSwarm re-ask the same question
+   until they type. Put long details (the grouping list, the plan) in
+   `query` and keep the question itself short, e.g. "按此分组继续？" with
+   options "继续（推荐）" · "调整分组" · "合并成更少页".
 
-   Also ask for the output folder if it wasn't given. If the user says
-   "just do it" / "surprise me" / "go ahead" without answering, use the
-   recommended options and say which you used. Map the answers with
-   section 1a.
-2. **Inspect**: call `photo_inspect` once with all paths and
-   `contact_sheet_dir` = the output folder.
-3. **Group** (section 2). Show one line per group with the reason.
+   **Short-circuit: don't ask what is already decided.** Before each round,
+   drop every question that is
+   - answered outright ("4:5", "no text", "handwriting"), or
+   - **implied** by what the user said: "magazine / clean / editorial" →
+     editorial arrangement, no overlap, serif or sans, plain background;
+     "scrapbook / messy / journal" → loose & layered, handwriting, paper
+     texture; "minimal" → tidy, no decorations, sans; "film" → film strip,
+     typewriter; or
+   - irrelevant after earlier answers (no font question after "no text").
+   Name the implied choices in one line in the lead text so the user can
+   correct them ("I'll keep it clean: editorial layout, no overlap, serif").
+   If nothing is left to ask in a round, skip that round.
+
+   **Round 1: structure**
+
+   | Question | Options (max 4) |
+   |---|---|
+   | Format | series of pages · series + cover page · one collage post · panorama carousel — recommend from the photo count ("10 photos → series, ~4 pages") |
+   | Arrangement (includes overlap) | loose & layered (photos overlap) · loose, no overlap · tidy grid · editorial (one big + small) — film strip if the user types it |
+   | Text | none · title only · title + short notes · I'll give you the text |
+   | Platform | Instagram 4:5 · square 1:1 · story 9:16 · 小红书 3:4 |
+
+   **Round 2: look**
+
+   | Question | Options (max 4) |
+   |---|---|
+   | Font style (only if there is text) | handwritten casual · cursive script · elegant serif · clean sans (typewriter / marker if the user types them) |
+   | Background | paper texture · pattern (grid / dots / checks / stripes) · soft gradient · plain colour |
+   | Colour mood | warm · cool · pastel · neutral / dark |
+   | Decorations | a few (tape, stamp) · none · lots (stickers, labels, scraps) |
+
+   If the output folder is missing, ask for it in round 1's lead text.
+   Separate posts per group, a closing page, or other choices come in as
+   typed answers. If the user says "just do it" / "surprise me" / "go
+   ahead" instead of answering, use the recommended options and say which
+   you used. Map the answers with section 1a.
+2. **Inspect**: call `photo_inspect` once with the photo paths or simply the
+   folder (it expands to the images inside) and `contact_sheet_dir` = the
+   output folder. Use the returned `path`s in the spec.
+3. **Group** (section 2). Show one line per group with the reason. To
+   confirm, use `ask_user` with options (continue / adjust), never a bare
+   free-text question.
 4. **Plan**: per post/page, 1–2 lines: layout, photos, background, text.
 5. **Render a preview** (`name` like `kyoto-preview-1`). For a series use one
    `post_render` call with `theme` + `pages`.
@@ -74,7 +106,8 @@ Reply in the user's language.
 | editorial | `hero`, `hero-side`, `magazine` |
 | loose & tilted | `scatter` (tilt 5–9) or `polaroids`; `polaroid`/`matte` frame + shadow |
 | film strip | `filmstrip`, or `grid` + `film` frame |
-| overlap none / a little / lots | `scatter` `overlap` 0 / 0.12–0.18 / 0.3–0.4 (`variety` 0.3); tidy layouts never overlap |
+| loose & layered / loose, no overlap | `scatter` `overlap` 0.15–0.35 (`variety` 0.3; higher for "messy"/"pile") / `overlap` 0; tidy and editorial layouts never overlap |
+| decorations none / a few / lots | no decorations / 1–2 kinds (tape, postmark) / up to 3 kinds per page (stickers, labels, scraps, tape) |
 | handwritten casual | font `hand` (Caveat) or `scrawl` (Reenie Beanie, messier) |
 | cursive script | font `script` (Dancing Script) |
 | marker | font `marker` (Permanent Marker), short words only |

@@ -36,7 +36,7 @@ class PhotoInspectTool(Tool):
                         "paths": {
                             "type": "array",
                             "items": {"type": "string"},
-                            "description": "Absolute paths of the photos (jpg/png/webp/heic-free formats Pillow reads).",
+                            "description": "Absolute paths of photos and/or folders (a folder expands to the jpg/png/webp/tif/bmp files directly inside it).",
                         },
                         "contact_sheet_dir": {
                             "type": "string",
