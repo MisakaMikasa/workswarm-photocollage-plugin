@@ -37,7 +37,7 @@ date stamps — in a vibe you describe ("90s film", "travel journal",
 | `tools/photo_inspect_tool.py` | Photo facts, suggested groups, contact sheet |
 | `tools/post_render_tool.py` | Renders a spec to JPG/PNG |
 | `tools/vibepost_engine.py` | Shared Pillow engine |
-| `assets/fonts` | Inter, Playfair Display, Caveat, Special Elite, Space Mono, DSEG7 (OFL / Apache 2.0; licences included) |
+| `assets/fonts` | Inter, Playfair Display, Caveat, Dancing Script, Permanent Marker, Reenie Beanie, Special Elite, Space Mono, DSEG7 (OFL / Apache 2.0; licences included) |
 
 ## Usage
 

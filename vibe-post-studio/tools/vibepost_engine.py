@@ -82,12 +82,16 @@ ROLE_FONTS = {
     "serif": ["PlayfairDisplay.ttf"],
     "serif_italic": ["PlayfairDisplay-Italic.ttf"],
     "hand": ["Caveat.ttf"],
+    "script": ["DancingScript.ttf"],
+    "marker": ["PermanentMarker.ttf"],
+    "scrawl": ["ReenieBeanie.ttf"],
     "typewriter": ["SpecialElite.ttf"],
     "mono": ["SpaceMono.ttf"],
     "mono_bold": ["SpaceMono-Bold.ttf"],
     "digital": ["DSEG7Classic-BoldItalic.ttf", "SpaceMono-Bold.ttf"],
 }
-ROLE_CJK = {"serif": "cjk_serif", "serif_italic": "cjk_serif", "hand": "cjk_kai", "typewriter": "cjk_serif"}
+ROLE_CJK = {"serif": "cjk_serif", "serif_italic": "cjk_serif", "hand": "cjk_kai", "script": "cjk_kai",
+            "scrawl": "cjk_kai", "marker": "cjk_sans_bold", "typewriter": "cjk_serif"}
 
 
 def font_chain(role: str, weight: int) -> list[str]:
@@ -731,6 +735,42 @@ def layout_slots(ctx: Ctx) -> list[Slot]:
             cy = my + top + (r + 0.5) * cell_h + ctx.rng.uniform(-0.02, 0.02)
             slots.append(Slot(cx - pw / 2, cy - ph / 2, pw, ph, ctx.rng.uniform(-9, 9)))
         ctx.spec.setdefault("frame", {"style": "polaroid", "shadow": True})
+    elif t == "scatter":
+        # loose, tilted, optionally overlapping arrangement (scrapbook / moodboard)
+        overlap = max(0.0, min(0.45, float(lay.get("overlap", 0.12))))
+        tilt = abs(float(lay.get("tilt", 6)))
+        variety = max(0.0, min(0.5, float(lay.get("variety", 0.25))))
+        top = float(lay.get("top_space", 0.0))
+        bottom = float(lay.get("bottom_space", 0.0))
+        area_w, area_h = 1 - 2 * mx, 1 - 2 * my - top - bottom
+        hints = [float(p.get("_aspect_hint", 1.25)) for p in ctx.photos[:n]]  # photo h / w
+        avg_hint = sum(hints) / len(hints) if hints else 1.25
+
+        def fit_w(cols: int) -> float:  # photo width that fits a cell, in slide widths
+            rows_ = math.ceil(n / cols)
+            cw_, ch_ = area_w / cols, area_h / rows_
+            return min(cw_, ch_ / (avg_hint * aspect))
+
+        cols = max(range(1, n + 1), key=lambda k: (round(fit_w(k), 3), -abs(k - math.sqrt(n))))
+        rows = math.ceil(n / cols)
+        cw, ch = area_w / cols, area_h / rows
+        spread = 0.12 + overlap * 0.6  # how far photos wander from their cell centre
+        for i in range(n):
+            r, c = divmod(i, cols)
+            in_row = min(cols, n - r * cols)
+            grow = (1 + overlap * 1.3) * (1 + (variety if i == 0 else ctx.rng.uniform(-variety, variety * 0.6)))
+            w = fit_w(cols) * (0.88 if overlap == 0 else 1.0) * grow
+            h = w * hints[i] * aspect
+            if h > ch * (1 + overlap * 1.3):
+                w, h = w * ch * (1 + overlap * 1.3) / h, ch * (1 + overlap * 1.3)
+            row_shift = (cols - in_row) * cw / 2 + (cw * 0.18 if r % 2 else -cw * 0.18) * (overlap > 0)
+            cx = mx + (c + 0.5) * cw + row_shift + ctx.rng.uniform(-1, 1) * cw * spread * 0.5
+            cy = my + top + (r + 0.5) * ch + ctx.rng.uniform(-1, 1) * ch * spread * 0.5
+            cx = min(max(cx, mx + w * 0.42), 1 - mx - w * 0.42)
+            cy = min(max(cy, my + top + h * 0.45), 1 - my - bottom - h * 0.45)
+            sign = 1 if (i + r) % 2 else -1
+            rot = sign * ctx.rng.uniform(tilt * 0.35, tilt) if tilt else 0.0
+            slots.append(Slot(cx - w / 2, cy - h / 2, w, h, rot))
     elif t == "magazine":
         bleed = float(lay.get("hero", 0.64))
         slots.append(Slot(0, 0, 1, bleed))

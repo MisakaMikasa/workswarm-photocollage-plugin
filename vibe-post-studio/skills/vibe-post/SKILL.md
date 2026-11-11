@@ -1,6 +1,6 @@
 ---
 name: vibe-post
-description: "氛围拼图帖：把用户自己的照片按指定氛围排版成 Instagram / 小红书帖子、拼图、多页图组或轮播图（背景、边框、文字、照片注释、相机参数、日期戳、贴纸等）。必读规则：调用 post_render 前先用 skill_tool 读取本技能全文；⓪用户没说明形式/风格时，先用一条消息询问（单张拼图 / 多页图组 / 全景轮播 / 按组分开发帖；是否要封面/结尾页；氛围；是否加注释及注释风格；输出目录），再开始渲染；①先用 photo_inspect 检查照片再分组——用户指定优先，其次按内容、地点、时间，每组用一句话说明理由；做多张时先确认分组；②只用用户原图，只裁剪缩放，禁止 AI 生成/重绘，禁止调色滤镜；③不得编造 EXIF；日期地点未知时先问，用户同意虚构才可虚构并注明；④只写入用户指定目录；⑤先出预览，按反馈小步修改，渲染警告（重叠、字太小）先修再给用户看。Vibe Post rules: read this skill via skill_tool before calling post_render."
+description: "氛围拼图帖：把用户自己的照片按指定氛围排版成 Instagram / 小红书帖子、拼图、多页图组或轮播图（背景、边框、文字、照片注释、相机参数、日期戳、贴纸等）。必读规则：调用 post_render 前先用 skill_tool 读取本技能全文；⓪用户没说明形式/风格时，先用一次提问（ask_user，多个选择题）问清：形式（单张拼图 / 多页图组 / 全景轮播 / 按组分开发帖，是否要封面/结尾页）、照片摆放（整齐网格 / 杂志主次 / 随意散落倾斜 / 胶片条）、是否重叠（不重叠 / 少量 / 大量堆叠）、文字内容（不要文字 / 只要标题 / 标题+每张注释 / 用户自己提供）、字体风格（手写 / 花体草书 / 马克笔 / 打字机 / 简洁无衬线 / 优雅衬线）、背景与氛围、画幅、输出目录；每题给推荐项和“你来定”，再开始渲染；预览图必须用发送文件工具直接发到对话里，不要只给本地链接；①先用 photo_inspect 检查照片再分组——用户指定优先，其次按内容、地点、时间，每组用一句话说明理由；做多张时先确认分组；②只用用户原图，只裁剪缩放，禁止 AI 生成/重绘，禁止调色滤镜；③不得编造 EXIF；日期地点未知时先问，用户同意虚构才可虚构并注明；④只写入用户指定目录；⑤先出预览，按反馈小步修改，渲染警告（重叠、字太小）先修再给用户看。Vibe Post rules: read this skill via skill_tool before calling post_render."
 ---
 
 # Vibe Post Studio
@@ -28,22 +28,27 @@ Reply in the user's language.
 
 ## 1. Workflow
 
-1. **Ask first when there is no direction.** If the user has not said what
-   format/style they want, send **one** message before rendering anything
-   (skip what they already told you; never ask the same thing twice):
-   - **Format** with a one-line recommendation from the photo count
-     (e.g. "10 photos → I'd suggest (b), about 5 pages"):
-     (a) one collage post · (b) a series of pages, each its own layout with a
-     shared theme · (c) a swipeable panorama carousel (one wide canvas cut into
-     slides) · (d) separate posts, one per group.
-   - For (b)/(c): **cover page and/or closing page?** (optional, not default)
-   - **Vibe**, if not given: 3–4 examples from section 5.
-   - **Notes on photos**: none · date & place · short captions; and a note
-     style (section 4).
-   - **Platform**: Instagram 4:5 (default), square, story 9:16, 小红书 3:4.
-   - **Output folder**, if not given.
-   If the user says "just do it" / "surprise me", use your recommendation and
-   say what you chose.
+1. **Ask about style first when there is no direction.** Before rendering
+   anything, ask **one round** of multiple-choice questions (use the
+   `ask_user` tool if available; otherwise one message). Skip what the user
+   already told you, never ask twice, and give every question a
+   **recommended** option plus "you decide":
+
+   | # | Question | Options |
+   |---|---|---|
+   | 1 | **Format** | one collage post · series of pages (own layout each, shared theme) · swipeable panorama carousel · separate posts per group — recommend from photo count ("10 photos → series, ~4 pages") |
+   | 2 | **Cover / closing page?** (series or carousel only) | none · cover with a big title · cover + closing |
+   | 3 | **Photo arrangement** | tidy grid · editorial (one big + small ones) · loose & tilted (scattered) · film strip |
+   | 4 | **Overlap** | none · a little · lots (layered scrapbook pile) |
+   | 5 | **Text** | no text · title only · title + a short note per photo/page · I'll give you the text |
+   | 6 | **Font style** | handwritten casual · cursive script · marker · typewriter · clean sans · elegant serif |
+   | 7 | **Background & mood** | plain light · paper / kraft texture · pattern (grid, dots, checks, lines) · soft gradient · dark — plus a colour mood (warm / cool / pastel / neutral) |
+   | 8 | **Platform** | Instagram 4:5 · square · story 9:16 · 小红书 3:4 |
+
+   Also ask for the output folder if it wasn't given. If the user says
+   "just do it" / "surprise me" / "go ahead" without answering, use the
+   recommended options and say which you used. Map the answers with
+   section 1a.
 2. **Inspect**: call `photo_inspect` once with all paths and
    `contact_sheet_dir` = the output folder.
 3. **Group** (section 2). Show one line per group with the reason.
@@ -52,12 +57,33 @@ Reply in the user's language.
    `post_render` call with `theme` + `pages`.
 6. **Fix every warning before showing** (overlaps, tiny text, text not fitting,
    photo enlarged too much, text across a carousel seam): adjust and re-render.
-7. **Show**: the file path(s) (for a series also `-overview.jpg`) and a
-   one-line summary per page.
+7. **Show in the chat**: send the images themselves with the file-sending
+   tool (`send_file_to_user`): every page plus `-overview.jpg` for a series.
+   Local file links don't open for the user, so never rely on a link alone.
+   Add a one-line summary per page.
 8. **Tweak loop**: apply feedback as small edits to the last spec
    (`<name>.spec.json` next to the images); render `-preview-2`, `-preview-3` …
 9. **Finish**: render the final name, then write a caption and 5–10 hashtags in
    the vibe, in the user's language. List files in posting order.
+
+## 1a. Turning the answers into a spec
+
+| Answer | Spec |
+|---|---|
+| tidy grid | `grid` (or `hero` for 1 big + rest), `matte`/`keyline`/`none` frame, no tilt |
+| editorial | `hero`, `hero-side`, `magazine` |
+| loose & tilted | `scatter` (tilt 5–9) or `polaroids`; `polaroid`/`matte` frame + shadow |
+| film strip | `filmstrip`, or `grid` + `film` frame |
+| overlap none / a little / lots | `scatter` `overlap` 0 / 0.12–0.18 / 0.3–0.4 (`variety` 0.3); tidy layouts never overlap |
+| handwritten casual | font `hand` (Caveat) or `scrawl` (Reenie Beanie, messier) |
+| cursive script | font `script` (Dancing Script) |
+| marker | font `marker` (Permanent Marker), short words only |
+| typewriter / clean sans / elegant serif | `typewriter` / `sans` / `serif` or `serif_italic` |
+| background & mood | section 5 recipes; pattern colours with low alpha (`#rrggbb22`) |
+| no text | no `texts`, no `note`s, no postmark text |
+
+Mix: within a series keep the answers as the theme, but vary layout details
+page to page (e.g. scatter with different photo counts, one hero page).
 
 ## 2. Grouping photos
 
@@ -86,9 +112,9 @@ Priority, highest first:
 | Photos on one page | Good templates |
 |---|---|
 | 1 | `single`, `magazine`, `free` (one tilted polaroid) |
-| 2–3 | `hero`, `hero-side`, `filmstrip`, `grid` 2 cols, `magazine` (≤ 3) |
-| 4 | `grid` 2×2, `polaroids`, `hero` (1 + 3) |
-| 5–9 | `grid`, `polaroids` (≤ 6) — or split into pages |
+| 2–3 | `hero`, `hero-side`, `filmstrip`, `grid` 2 cols, `magazine` (≤ 3), `scatter` |
+| 4 | `grid` 2×2, `scatter`, `polaroids`, `hero` (1 + 3) |
+| 5–9 | `grid`, `scatter` (overlap ≥ 0.15), `polaroids` (≤ 6) — or split into pages |
 
 Many photos: a series of pages (b), a panorama carousel (c) or separate posts
 (d), as the user chose. Never default to the panorama carousel.
@@ -115,7 +141,7 @@ automatically. Styles — pick by vibe, handwriting is just one option:
 | `minimal` | small spaced sans caps | gallery, moody, minimal |
 | `typewriter` | typewriter font | film, journal |
 | `label` | typewriter on a cream label | journal, zine, scrapbook |
-| `handwritten` | Caveat, slight tilt | journal, casual, summer |
+| `handwritten` | Caveat, slight tilt (set `"font": "script"` or `"scrawl"` for cursive / messier) | journal, casual, summer |
 | `stamp` | orange digital date look (digits work best) | film |
 | `magazine` | serif italic | magazine, editorial |
 
@@ -239,6 +265,7 @@ A path string, or `{"path", "focus": [x, y], "caption" (polaroid frame only),
 | `hero` | hero 0.62, margin, gap, top_space, bottom_space | photo 0 on top, rest in a row |
 | `hero-side` | same | photo 0 left, rest stacked right |
 | `filmstrip` | frames 3, strip_width 0.7, frame_ratio 1.5, tilt, offset_x, offset_y | vertical film strip |
+| `scatter` | overlap 0.12 (0–0.45), tilt 6 (max °), variety 0.25 (size mix; photo 0 biggest), margin, top_space, bottom_space | loose, tilted, optionally overlapping pile; keeps each photo's shape; later photos lie on top |
 | `polaroids` | margin, top_space, bottom_space, size | scattered, auto tilt; polaroid frame |
 | `magazine` | hero 0.64, margin, gap | photo 0 full-bleed top; ≤ 2 small photos bottom-right; title area x 0.06–0.44, y 0.66–0.95 |
 | `carousel` | tilt | panorama; needs `slides` ≥ 2 |
@@ -267,8 +294,10 @@ the user.
 ```
 
 - `font`: theme roles `title` `body` `note`, or `sans` (Inter 100–900) ·
-  `serif` (Playfair 400–900) · `serif_italic` · `hand` · `typewriter` ·
-  `mono` · `mono_bold` · `digital`.
+  `serif` (Playfair 400–900) · `serif_italic` · `hand` (Caveat, casual) ·
+  `script` (Dancing Script, cursive 400–700) · `marker` (Permanent Marker) ·
+  `scrawl` (Reenie Beanie, messy pen) · `typewriter` · `mono` · `mono_bold` ·
+  `digital`. Handwriting fonts read best at size ≥ 0.035.
 - `size` < 1 = fraction of width (0.045 ≈ 49 px); ≥ 1 = px. Auto-shrinks to fit.
 - `effects`: `shadow`, `glow`, `stroke`, `marker` (highlighter), `background`
   (label behind text: colour or `{color, padding, radius, per_line}`).

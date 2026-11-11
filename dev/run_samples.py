@@ -189,6 +189,28 @@ SAMPLES["07-series"] = {
     ],
 }
 
+SAMPLES["08-scatter"] = {  # scatter at three overlap levels + the new handwriting fonts
+    "format": "4:5",
+    "theme": {"background": {"color": "#f3ece1", "texture": "paper"},
+              "frame": {"style": "polaroid", "shadow": True},
+              "fonts": {"title": "script", "note": "scrawl"}, "colors": {"text": "#3a2c25"}},
+    "pages": [
+        {"photos": [P[0], P[1], P[7]],
+         "layout": {"template": "scatter", "overlap": 0, "tilt": 4, "top_space": 0.12, "bottom_space": 0.05},
+         "texts": [{"text": "no overlap, tidy-ish", "box": [0.06, 0.035, 0.88, 0.08], "font": "title", "size": 0.06}]},
+        {"background": {"pattern": {"type": "checks", "color": "#9fc2b322", "spacing": 0.06}},
+         "photos": [P[2], P[8], P[9], P[3]],
+         "layout": {"template": "scatter", "overlap": 0.15, "tilt": 7, "top_space": 0.12, "bottom_space": 0.04},
+         "decorations": [{"type": "tape", "photo": 0}, {"type": "tape", "photo": 2}],
+         "texts": [{"text": "a little overlap", "box": [0.06, 0.035, 0.88, 0.08], "font": "marker", "size": 0.05}]},
+        {"background": {"color": "#f6e3dc", "texture": "paper"},
+         "photos": [P[4], P[5], P[6], P[1], P[0], P[9]],
+         "layout": {"template": "scatter", "overlap": 0.35, "tilt": 10, "variety": 0.35, "top_space": 0.11},
+         "texts": [{"text": "lots of overlap — scrapbook pile", "box": [0.06, 0.035, 0.88, 0.07], "font": "scrawl",
+                    "size": 0.06}]},
+    ],
+}
+
 BAD = {  # deliberately broken: overlapping title on a photo, tiny text, small postmark
     "format": "4:5",
     "photos": [P[0], P[1]],
